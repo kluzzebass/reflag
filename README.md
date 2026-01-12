@@ -5,10 +5,12 @@ A tool that translates command-line flags between different CLI tools. Currently
 - `ls` → [eza](https://github.com/eza-community/eza)
 - `grep` → [ripgrep](https://github.com/BurntSushi/ripgrep)
 - `find` → [fd](https://github.com/sharkdp/fd)
+- `du` → [dust](https://github.com/bootandy/dust)
+- `ps` → [procs](https://github.com/dalance/procs)
 
 ## Why?
 
-You can't teach an old dog new tricks. After decades of muscle memory, your fingers type `ls -ltr` before your brain even registers the thought. Modern replacements like eza, fd, and ripgrep are genuinely better tools with nicer output, better defaults, and useful features—but they come with their own flag conventions that differ just enough to trip you up.
+You can't teach an old dog new tricks. After decades of muscle memory, your fingers type `ls -ltr` before your brain even registers the thought. Modern replacements like eza, fd, ripgrep, dust, and procs are genuinely better tools with nicer output, better defaults, and useful features—but they come with their own flag conventions that differ just enough to trip you up.
 
 reflag bridges this gap. Instead of retraining years of muscle memory or giving up on better tools, you can keep typing the commands you know while getting the output you want. It's not about refusing to learn; it's about acknowledging that some habits are so deeply ingrained they're practically reflexes.
 
