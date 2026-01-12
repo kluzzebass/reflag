@@ -49,38 +49,96 @@ end
 
 ## Supported Flags
 
-| ls flag | eza equivalent |
-|---------|----------------|
-| `-l` | `-l` |
-| `-a` | `-a` |
-| `-A` | `-A` |
-| `-h` | (default in eza) |
-| `-t` | `--sort=modified --reverse` |
-| `-S` | `--sort=size --reverse` |
-| `-r` | `--reverse` |
-| `-R` | `--recurse` |
-| `-1` | `-1` |
-| `-d` | `-d` |
-| `-F` | `-F` |
-| `-G` | (default in eza) |
-| `-i` | `--inode` |
-| `-s` | `--blocksize` |
-| `-n` | `--numeric` |
-| `-o` | `-l --no-group` |
-| `-g` | `-l --no-user` |
-| `-p` | `--classify` |
-| `-c` | `--sort=changed` |
-| `-u` | `--sort=accessed` |
-| `-x` | `--across` |
-| `-C` | `--grid` |
-| `-T` | `--tree` |
+### Display Format
 
-### Sort order handling
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-l` | `-l` | Long format |
+| `-1` | `-1` | One entry per line |
+| `-C` | `--grid` | Multi-column output |
+| `-x` | `--across` | Sort grid across |
+| `-m` | `--oneline` | Stream output |
 
-ls and eza have opposite default sort orders for time (`-t`) and size (`-S`) sorting. ls2eza automatically adds `--reverse` when needed so that the output matches ls behavior:
+### Show/Hide Entries
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-a` | `-a` | Show all (including . and ..) |
+| `-A` | `-A` | Show hidden (except . and ..) |
+| `-d` | `-d` | List directories themselves |
+| `-R` | `--recurse` | Recurse into directories |
+
+### Sorting
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-t` | `--sort=modified --reverse` | Sort by modification time |
+| `-S` | `--sort=size --reverse` | Sort by size |
+| `-c` | `--sort=changed --reverse` | Sort by change time |
+| `-u` | `--sort=accessed --reverse` | Sort by access time |
+| `-U` | `--sort=created --reverse` | Sort by creation time (BSD) |
+| `-f` | `--sort=none -a` | Unsorted, show all |
+| `-v` | `--sort=name` | Version/name sort |
+| `-r` | `--reverse` | Reverse sort order |
+
+### Long Format Options
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-i` | `--inode` | Show inode numbers |
+| `-s` | `--blocksize` | Show allocated blocks |
+| `-n` | `--numeric` | Numeric user/group IDs |
+| `-o` | `-l --no-group` | Long format without group |
+| `-g` | `-l --no-user` | Long format without owner |
+| `-O` | `--flags` | Show file flags (BSD/macOS) |
+| `-@` | `--extended` | Show extended attributes |
+| `-T` | `--time-style=full-iso` | Full timestamp display |
+| `-h` | (default) | Human-readable sizes |
+
+### Indicators
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-F` | `-F` | Append type indicators |
+| `-p` | `--classify` | Append / to directories |
+
+### Symlinks
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-L` | `-X` | Dereference symlinks |
+| `-H` | `-X` | Follow symlinks on command line |
+
+### Other
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-G` | (default) | Color output |
+| `-k` | (ignored) | Block size handling |
+
+### Long Options
+
+| ls option | eza equivalent |
+|-----------|----------------|
+| `--all` | `-a` |
+| `--almost-all` | `-A` |
+| `--directory` | `-d` |
+| `--recursive` | `--recurse` |
+| `--human-readable` | (default) |
+| `--inode` | `--inode` |
+| `--numeric-uid-gid` | `--numeric` |
+| `--classify` | `-F` |
+| `--dereference` | `-X` |
+| `--color=WHEN` | `--color=WHEN` |
+
+### Sort Order Handling
+
+ls and eza have opposite default sort orders for time and size sorting. ls2eza automatically adds `--reverse` when needed so that the output matches ls behavior:
 
 - `ls -lt` shows newest first → `eza --sort=modified --reverse`
 - `ls -ltr` shows oldest first → `eza --sort=modified` (no reverse needed)
+- `ls -lS` shows largest first → `eza --sort=size --reverse`
+- `ls -lc` shows newest changed first → `eza --sort=changed --reverse`
 
 ## License
 

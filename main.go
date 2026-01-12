@@ -11,32 +11,82 @@ import (
 var reverseNeeded = map[rune]bool{
 	't': true, // time sort: ls=newest first, eza=oldest first
 	'S': true, // size sort: ls=largest first, eza=smallest first
+	'c': true, // change time sort: ls=newest first, eza=oldest first
+	'u': true, // access time sort: ls=newest first, eza=oldest first
+	'U': true, // creation time sort (BSD): ls=newest first, eza=oldest first
 }
 
 // Simple 1:1 flag mappings
 var flagMap = map[rune][]string{
-	'l': {"-l"},
-	'a': {"-a"},
-	'A': {"-A"},
-	'h': {}, // eza uses human-readable by default
-	't': {"--sort=modified"},
-	'S': {"--sort=size"},
-	'R': {"--recurse"},
-	'1': {"-1"},
-	'd': {"-d"},
-	'F': {"-F"},
-	'G': {}, // color is default in eza
-	'i': {"--inode"},
-	's': {"--blocksize"},
-	'n': {"--numeric"},
-	'o': {"-l", "--no-group"},
-	'g': {"-l", "--no-user"},
-	'p': {"--classify"},
-	'c': {"--sort=changed"},
-	'u': {"--sort=accessed"},
-	'x': {"--across"},
-	'C': {"--grid"},
-	'T': {"--tree"},
+	// Display format
+	'l': {"-l"},                // long format
+	'1': {"-1"},                // one entry per line
+	'C': {"--grid"},            // multi-column output (default in terminal)
+	'x': {"--across"},          // sort grid across rather than down
+	'm': {"--oneline"},         // stream output (eza doesn't have comma-separated, use oneline)
+
+	// Show/hide entries
+	'a': {"-a"},                // show all including . and ..
+	'A': {"-A"},                // show hidden but not . and ..
+	'd': {"-d"},                // list directories themselves, not contents
+	'R': {"--recurse"},         // recurse into directories
+
+	// Sorting
+	't': {"--sort=modified"},   // sort by modification time
+	'S': {"--sort=size"},       // sort by size
+	'c': {"--sort=changed"},    // sort by change time
+	'u': {"--sort=accessed"},   // sort by access time
+	'U': {"--sort=created"},    // sort by creation time (BSD)
+	'f': {"--sort=none", "-a"}, // unsorted, show all
+	'v': {"--sort=name"},       // natural version sort (approximate)
+
+	// File size display
+	'h': {},                    // human-readable (default in eza)
+	'k': {},                    // 1024-byte blocks (eza handles differently)
+	's': {"--blocksize"},       // show allocated blocks
+
+	// Indicators and classification
+	'F': {"-F"},                // append file type indicators (*/=>@|)
+	'p': {"--classify"},        // append / to directories
+
+	// Long format options
+	'i': {"--inode"},           // show inode numbers
+	'n': {"--numeric"},         // numeric user/group IDs
+	'o': {"-l", "--no-group"},  // long format without group (BSD)
+	'g': {"-l", "--no-user"},   // long format without owner (GNU style)
+	'O': {"--flags"},           // show file flags (BSD/macOS)
+	'e': {},                    // show ACL (no eza equivalent)
+	'T': {"--time-style=full-iso"}, // full time info (not tree! ls -T shows full timestamp)
+	'@': {"--extended"},        // show extended attributes
+
+	// Symlink handling
+	'L': {"-X"},                // dereference symlinks
+	'H': {"-X"},                // follow symlinks on command line
+	'P': {},                    // don't follow symlinks (default)
+
+	// Color
+	'G': {},                    // color output (default in eza)
+
+	// Misc
+	'q': {},                    // replace non-printable with ? (no eza equivalent)
+	'w': {},                    // raw non-printable (no eza equivalent)
+	'b': {},                    // C-style escapes (no eza equivalent)
+	'B': {},                    // octal escapes (no eza equivalent)
+}
+
+// Long option mappings (ls long options to eza equivalents)
+var longFlagMap = map[string][]string{
+	"--all":             {"-a"},
+	"--almost-all":      {"-A"},
+	"--directory":       {"-d"},
+	"--recursive":       {"--recurse"},
+	"--human-readable":  {}, // default in eza
+	"--inode":           {"--inode"},
+	"--numeric-uid-gid": {"--numeric"},
+	"--classify":        {"-F"},
+	"--file-type":       {"--classify"},
+	"--dereference":     {"-X"},
+	"--no-group":        {"--no-group"},
 }
 
 func translateFlags(args []string) []string {
@@ -47,10 +97,22 @@ func translateFlags(args []string) []string {
 
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "--") {
-			// Long option - pass through
+			// Long option handling
 			if arg == "--reverse" {
 				userReverse = true
+			} else if strings.HasPrefix(arg, "--color") {
+				// Pass through --color options (--color, --color=auto, etc.)
+				ezaArgs = append(ezaArgs, arg)
+			} else if strings.HasPrefix(arg, "--sort=") {
+				// Pass through sort options
+				ezaArgs = append(ezaArgs, arg)
+			} else if strings.HasPrefix(arg, "--time=") {
+				// Pass through time options
+				ezaArgs = append(ezaArgs, arg)
+			} else if mapped, ok := longFlagMap[arg]; ok {
+				ezaArgs = append(ezaArgs, mapped...)
 			} else {
+				// Unknown long option - pass through
 				ezaArgs = append(ezaArgs, arg)
 			}
 		} else if strings.HasPrefix(arg, "-") && len(arg) > 1 {
