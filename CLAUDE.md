@@ -6,11 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ls2eza is a Go CLI tool that translates `ls` command-line flags to their `eza` equivalents. It outputs the translated eza command (does not execute it).
 
-## Build Commands
+## Build and Test Commands
 
 ```bash
 go build -o ls2eza       # Build the binary
 go run main.go -la       # Run directly without building
+go test -v               # Run all tests
+go test -run TestName    # Run specific test
 ```
 
 ## Architecture
