@@ -1,5 +1,7 @@
 # reflag
 
+> 🤖✨🚀 *This — is — AI slop* 💯🔥💻⚡️🎯👨‍💻🙌
+
 A tool that translates command-line flags between different CLI tools. Currently supports:
 
 - `ls` → [eza](https://github.com/eza-community/eza)
