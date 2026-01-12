@@ -74,14 +74,38 @@ ls2eza -la  # outputs: eza -l -a
 
 ### Shell Integration
 
-Generate shell functions for all available translators:
+Generate shell functions that wrap the source commands:
 
 ```bash
-# Show what would be added
+# Preview what would be generated
 reflag --init bash
 
-# Add to your shell config
-reflag --init bash >> ~/.bashrc   # or ~/.zshrc
+# Generate only specific translators (useful if conflicts exist)
+reflag --init bash ls2eza grep2rg
+```
+
+**Recommended setup:** Add this to your shell config to automatically pick up new translators:
+
+```bash
+# ~/.bashrc or ~/.zshrc
+eval "$(reflag --init bash)"
+
+# Or for specific translators only:
+eval "$(reflag --init bash ls2eza grep2rg)"
+```
+
+```fish
+# ~/.config/fish/config.fish
+reflag --init fish | source
+
+# Or for specific translators only:
+reflag --init fish ls2eza grep2rg | source
+```
+
+**Alternative:** Append the output once (won't auto-update with new translators):
+
+```bash
+reflag --init bash >> ~/.bashrc
 reflag --init fish >> ~/.config/fish/config.fish
 ```
 

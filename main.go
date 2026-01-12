@@ -37,8 +37,36 @@ func printVersion(name string) {
 	}
 }
 
-func printInit(shell string) {
-	names := translator.List()
+// parseInitArgs parses --init arguments, returning shell type and translator names
+// Shell can appear anywhere in args; defaults to "bash" if not specified
+func parseInitArgs(args []string) (shell string, filterNames []string) {
+	shell = "bash"
+	for _, arg := range args {
+		switch arg {
+		case "bash", "zsh", "fish":
+			shell = arg
+		default:
+			filterNames = append(filterNames, arg)
+		}
+	}
+	return
+}
+
+func printInit(shell string, filterNames []string) {
+	var names []string
+	if len(filterNames) > 0 {
+		// Use specified translators
+		for _, name := range filterNames {
+			if translator.GetByName(name) != nil {
+				names = append(names, name)
+			} else {
+				fmt.Fprintf(os.Stderr, "warning: unknown translator %q\n", name)
+			}
+		}
+	} else {
+		// Use all translators
+		names = translator.List()
+	}
 	sort.Strings(names)
 
 	switch shell {
@@ -71,7 +99,7 @@ func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  reflag <source> <target> [flags...]")
 	fmt.Println("  reflag --list")
-	fmt.Println("  reflag --init [bash|zsh|fish]")
+	fmt.Println("  reflag --init [bash|zsh|fish] [translator...]")
 	fmt.Println("  reflag --version")
 	fmt.Println()
 	fmt.Println("Environment variables:")
@@ -159,11 +187,8 @@ func main() {
 		printUsage()
 		return
 	case "--init":
-		shell := "bash"
-		if len(args) > 1 {
-			shell = args[1]
-		}
-		printInit(shell)
+		shell, filterNames := parseInitArgs(args[1:])
+		printInit(shell, filterNames)
 		return
 	}
 

@@ -65,6 +65,76 @@ func TestDetectFromBinaryName(t *testing.T) {
 	}
 }
 
+func TestParseInitArgs(t *testing.T) {
+	tests := []struct {
+		name            string
+		args            []string
+		expectedShell   string
+		expectedFilters []string
+	}{
+		{
+			name:            "no args defaults to bash",
+			args:            []string{},
+			expectedShell:   "bash",
+			expectedFilters: nil,
+		},
+		{
+			name:            "shell only",
+			args:            []string{"fish"},
+			expectedShell:   "fish",
+			expectedFilters: nil,
+		},
+		{
+			name:            "shell first then translators",
+			args:            []string{"bash", "ls2eza", "grep2rg"},
+			expectedShell:   "bash",
+			expectedFilters: []string{"ls2eza", "grep2rg"},
+		},
+		{
+			name:            "translators first then shell",
+			args:            []string{"ls2eza", "bash", "grep2rg"},
+			expectedShell:   "bash",
+			expectedFilters: []string{"ls2eza", "grep2rg"},
+		},
+		{
+			name:            "shell at end",
+			args:            []string{"ls2eza", "grep2rg", "fish"},
+			expectedShell:   "fish",
+			expectedFilters: []string{"ls2eza", "grep2rg"},
+		},
+		{
+			name:            "translators only defaults to bash",
+			args:            []string{"ls2eza"},
+			expectedShell:   "bash",
+			expectedFilters: []string{"ls2eza"},
+		},
+		{
+			name:            "zsh shell",
+			args:            []string{"zsh", "find2fd"},
+			expectedShell:   "zsh",
+			expectedFilters: []string{"find2fd"},
+		},
+		{
+			name:            "multiple shells takes last",
+			args:            []string{"bash", "fish", "zsh"},
+			expectedShell:   "zsh",
+			expectedFilters: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			shell, filters := parseInitArgs(tt.args)
+			if shell != tt.expectedShell {
+				t.Errorf("parseInitArgs(%v) shell = %q, want %q", tt.args, shell, tt.expectedShell)
+			}
+			if !slices.Equal(filters, tt.expectedFilters) {
+				t.Errorf("parseInitArgs(%v) filters = %v, want %v", tt.args, filters, tt.expectedFilters)
+			}
+		})
+	}
+}
+
 func TestTranslatorRegistry(t *testing.T) {
 	// ls2eza should be registered via init()
 	tr := translator.Get("ls", "eza")
