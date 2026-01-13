@@ -15,143 +15,160 @@ func TestTranslateFlags(t *testing.T) {
 		{
 			name:     "no args",
 			input:    []string{},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
 		},
 		{
 			name:     "aux BSD style",
 			input:    []string{"aux"},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
 		},
 		{
 			name:     "ef UNIX style",
 			input:    []string{"-ef"},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
 		},
 		{
 			name:     "all processes -e",
 			input:    []string{"-e"},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
 		},
 		{
 			name:     "all processes -A",
 			input:    []string{"-A"},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
 		},
 
 		// Tree view
 		{
 			name:     "forest GNU",
 			input:    []string{"--forest"},
-			expected: []string{"--tree"},
+			expected: []string{"--pager", "disable", "--tree"},
 		},
 		{
 			name:     "hierarchy -H",
 			input:    []string{"-H"},
-			expected: []string{"--tree"},
+			expected: []string{"--pager", "disable", "--tree"},
 		},
 		{
 			name:     "forest BSD f",
 			input:    []string{"axjf"},
-			expected: []string{"--tree"},
+			expected: []string{"--pager", "disable", "--tree"},
 		},
 
 		// User filter
 		{
 			name:     "user filter -u",
 			input:    []string{"-u", "root"},
-			expected: []string{"root"},
+			expected: []string{"--pager", "disable", "root"},
 		},
 		{
 			name:     "user filter -U",
 			input:    []string{"-U", "www-data"},
-			expected: []string{"www-data"},
+			expected: []string{"--pager", "disable", "www-data"},
 		},
 		{
 			name:     "user filter attached",
 			input:    []string{"-uroot"},
-			expected: []string{"root"},
+			expected: []string{"--pager", "disable", "root"},
 		},
 
 		// PID filter
 		{
 			name:     "pid filter",
 			input:    []string{"-p", "1234"},
-			expected: []string{"1234"},
+			expected: []string{"--pager", "disable", "1234"},
 		},
 		{
 			name:     "pid filter attached",
 			input:    []string{"-p1234"},
-			expected: []string{"1234"},
+			expected: []string{"--pager", "disable", "1234"},
 		},
 
 		// Command filter
 		{
 			name:     "command filter",
 			input:    []string{"-C", "nginx"},
-			expected: []string{"nginx"},
+			expected: []string{"--pager", "disable", "nginx"},
 		},
 
 		// Sort
 		{
 			name:     "sort ascending",
 			input:    []string{"--sort=cpu"},
-			expected: []string{"--sorta", "cpu"},
+			expected: []string{"--pager", "disable", "--sorta", "cpu"},
 		},
 		{
 			name:     "sort descending",
 			input:    []string{"--sort=-mem"},
-			expected: []string{"--sortd", "mem"},
+			expected: []string{"--pager", "disable", "--sortd", "mem"},
 		},
 		{
 			name:     "sort with plus",
 			input:    []string{"--sort=+pid"},
-			expected: []string{"--sorta", "pid"},
+			expected: []string{"--pager", "disable", "--sorta", "pid"},
 		},
 		{
 			name:     "sort column mapping",
 			input:    []string{"--sort=%cpu"},
-			expected: []string{"--sorta", "cpu"},
+			expected: []string{"--pager", "disable", "--sorta", "cpu"},
 		},
 
 		// Combined
 		{
 			name:     "typical ps aux",
 			input:    []string{"aux"},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
 		},
 		{
 			name:     "ps with user",
 			input:    []string{"-ef", "-u", "root"},
-			expected: []string{"root"},
+			expected: []string{"--pager", "disable", "root"},
 		},
 		{
 			name:     "ps tree with user",
 			input:    []string{"--forest", "-u", "root"},
-			expected: []string{"--tree", "root"},
+			expected: []string{"--pager", "disable", "--tree", "root"},
 		},
 
 		// Search term (not BSD options)
 		{
 			name:     "search by name",
 			input:    []string{"nginx"},
-			expected: []string{"nginx"},
+			expected: []string{"--pager", "disable", "nginx"},
 		},
 		{
 			name:     "search by pid",
 			input:    []string{"1234"},
-			expected: []string{"1234"},
+			expected: []string{"--pager", "disable", "1234"},
 		},
 
 		// Ignored flags with values
 		{
 			name:     "output format ignored",
 			input:    []string{"-o", "pid,comm"},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
 		},
 		{
 			name:     "tty ignored",
 			input:    []string{"-t", "pts/0"},
-			expected: []string{},
+			expected: []string{"--pager", "disable"},
+		},
+
+		// Pager flag handling
+		{
+			name:     "user override pager with equals",
+			input:    []string{"--pager=always"},
+			expected: []string{"--pager=always"},
+		},
+		{
+			name:     "user override pager with space",
+			input:    []string{"--pager", "always"},
+			expected: []string{"--pager", "always"},
+		},
+		{
+			name:     "user override pager with other flags",
+			input:    []string{"--tree", "--pager=auto", "-u", "root"},
+			expected: []string{"--tree", "--pager=auto", "root"},
 		},
 	}
 

@@ -86,6 +86,7 @@ func translateFlags(args []string) []string {
 	var procsArgs []string
 	var searchTerms []string
 	skipNext := false
+	hasPagerFlag := false
 
 	for i, arg := range args {
 		if skipNext {
@@ -106,6 +107,9 @@ func translateFlags(args []string) []string {
 					searchTerms = append(searchTerms, val)
 				case "--pid":
 					searchTerms = append(searchTerms, val)
+				case "--pager":
+					hasPagerFlag = true
+					procsArgs = append(procsArgs, arg)
 				}
 				continue
 			}
@@ -115,6 +119,13 @@ func translateFlags(args []string) []string {
 				procsArgs = append(procsArgs, "--tree")
 			case "--headers", "--no-headers":
 				// Ignore
+			case "--pager":
+				hasPagerFlag = true
+				procsArgs = append(procsArgs, arg)
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					procsArgs = append(procsArgs, args[i+1])
+					skipNext = true
+				}
 			default:
 				if !ignoredFlags[arg] {
 					procsArgs = append(procsArgs, arg)
@@ -215,6 +226,11 @@ func translateFlags(args []string) []string {
 			// Otherwise treat as a search term (could be PID or pattern)
 			searchTerms = append(searchTerms, arg)
 		}
+	}
+
+	// Add default --pager disable if user hasn't specified it
+	if !hasPagerFlag {
+		procsArgs = append([]string{"--pager", "disable"}, procsArgs...)
 	}
 
 	// Build result
