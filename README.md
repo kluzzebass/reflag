@@ -1,6 +1,6 @@
 # reflag
 
-> 🤖✨🚀 *This — is — AI — slop* 💯🔥💻⚡️🎯👨‍💻🙌
+![AI Slop Badge](ai-slop-badge.svg)
 
 A tool that translates command-line flags between different CLI tools. Currently supports:
 
