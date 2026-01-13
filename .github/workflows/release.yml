@@ -68,3 +68,81 @@ jobs:
             dist/reflag-x86_64-pc-windows-gnu.exe
             dist/checksums.txt
           generate_release_notes: true
+
+      - name: Extract version and checksums
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION_NUM=${VERSION#v}
+          SHA256_X86=$(grep "reflag-x86_64-apple-darwin" dist/checksums.txt | cut -d' ' -f1)
+          SHA256_ARM=$(grep "reflag-aarch64-apple-darwin" dist/checksums.txt | cut -d' ' -f1)
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=$VERSION_NUM" >> $GITHUB_OUTPUT
+          echo "sha256_x86=$SHA256_X86" >> $GITHUB_OUTPUT
+          echo "sha256_arm=$SHA256_ARM" >> $GITHUB_OUTPUT
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: kluzzebass/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Homebrew formula
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_NUM="${{ steps.version.outputs.version_number }}"
+          SHA256_X86="${{ steps.version.outputs.sha256_x86 }}"
+          SHA256_ARM="${{ steps.version.outputs.sha256_arm }}"
+
+          cd homebrew-tap
+
+          # Create updated formula
+          cat > reflag.rb << 'EOF'
+class Reflag < Formula
+  desc "Translate command-line flags between different CLI tools"
+  homepage "https://github.com/kluzzebass/reflag"
+  version "VERSION_NUM"
+  license "MIT"
+
+  on_macos do
+    on_intel do
+      url "https://github.com/kluzzebass/reflag/releases/download/VERSION/reflag-x86_64-apple-darwin"
+      sha256 "SHA256_X86"
+    end
+
+    on_arm do
+      url "https://github.com/kluzzebass/reflag/releases/download/VERSION/reflag-aarch64-apple-darwin"
+      sha256 "SHA256_ARM"
+    end
+  end
+
+  def install
+    bin.install Dir["reflag-*"].first => "reflag"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/reflag --version")
+
+    # Test basic translation
+    output = shell_output("#{bin}/reflag ls eza -la")
+    assert_match "eza", output
+  end
+end
+EOF
+
+          # Replace placeholders
+          sed -i "s/VERSION_NUM/$VERSION_NUM/g" reflag.rb
+          sed -i "s|VERSION|$VERSION|g" reflag.rb
+          sed -i "s/SHA256_X86/$SHA256_X86/" reflag.rb
+          sed -i "s/SHA256_ARM/$SHA256_ARM/" reflag.rb
+
+      - name: Commit and push Homebrew formula
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reflag.rb
+          git commit -m "Update reflag to ${{ steps.version.outputs.version }}"
+          git push
