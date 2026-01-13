@@ -30,9 +30,19 @@ git push origin v1.0.0
 
 ### Package Structure
 
-```
+```text
 reflag/
 ├── main.go                       # CLI entry point, symlink detection
+├── preprocessor/
+│   ├── preprocessor.go           # Preprocessor interface
+│   ├── registry.go               # Global preprocessor registry
+│   ├── urlparse/                 # URL/hostname extraction utility
+│   ├── ping/                     # ping preprocessor
+│   ├── dig/                      # dig preprocessor
+│   ├── nslookup/                 # nslookup preprocessor
+│   ├── traceroute/               # traceroute preprocessor
+│   ├── traceroute6/              # traceroute6 preprocessor
+│   └── whois/                    # whois preprocessor
 ├── translator/
 │   ├── translator.go             # Translator interface
 │   ├── registry.go               # Global translator registry
@@ -62,6 +72,51 @@ reflag/
    - Explicit mode: `reflag <source> <target> [flags...]`
    - Built-in flags: `--list`, `--version`, `--help`
 
+4. **Preprocessor Interface** (`preprocessor/preprocessor.go`):
+   - `ToolName()` - tool name this preprocessor applies to
+   - `Preprocess(args)` - transforms arguments before translation
+
+5. **Preprocessor Registry** (`preprocessor/registry.go`):
+   - `Register(p)` - register a preprocessor
+   - `Get(toolName)` - lookup by tool name
+   - `List()` - list all registered preprocessors
+
+### Preprocessor System
+
+Preprocessors transform command arguments before they reach translators. This is useful for:
+
+- Extracting hostnames from URLs (e.g., `https://vg.no/page` → `vg.no`)
+- Normalizing inputs
+- Handling tool-specific argument formats
+
+**Key features:**
+
+- Independent of translators - can work standalone or with translators
+- Applied automatically when available for the source tool
+- URL parsing utility (`preprocessor/urlparse`) extracts hostnames from full URLs
+
+**Available preprocessors:**
+
+- `ping` - extracts hostnames from URLs
+- `ping6` - extracts hostnames from URLs
+- `dig` - extracts hostnames from URLs
+- `nslookup` - extracts hostnames from URLs
+- `traceroute` - extracts hostnames from URLs
+- `traceroute6` - extracts hostnames from URLs
+- `whois` - extracts domains from URLs
+
+**Example usage:**
+
+```bash
+# Standalone preprocessing (no translator)
+reflag ping ping https://vg.no/index.html
+# Output: ping vg.no
+
+# With translator
+reflag dig doggo https://example.com/page MX
+# Output: doggo -q example.com -t MX
+```
+
 ### ls2eza Translator
 
 Located in `translator/ls2eza/`:
@@ -88,6 +143,31 @@ These flags have different meanings between BSD and GNU ls:
 - `-I`: BSD=prevent auto -A (ignored), GNU=ignore pattern
 - `-w`: BSD=raw non-printable (ignored), GNU=output width
 - `-D`: BSD=date format, GNU=dired mode (ignored)
+
+## Adding a New Preprocessor
+
+1. Create package `preprocessor/<toolname>/`
+2. Implement `preprocessor.Preprocessor` interface:
+   ```go
+   type Preprocessor struct{}
+   
+   func (p *Preprocessor) ToolName() string {
+       return "toolname"
+   }
+   
+   func (p *Preprocessor) Preprocess(args []string) []string {
+       // Transform args as needed
+       return urlparse.ProcessArgs(args)  // For URL extraction
+   }
+   ```
+3. Call `preprocessor.Register()` in `init()`
+4. Import in `main.go` with blank identifier: `_ "github.com/kluzzebass/reflag/preprocessor/<toolname>"`
+5. Add tests in `preprocessor/<toolname>/preprocessor_test.go`
+6. Update `README.md` and `CLAUDE.md` with the new preprocessor
+
+**Note:** Preprocessors work independently of translators. They can be used:
+- Standalone (e.g., `reflag ping ping https://url`)
+- With translators (e.g., `reflag dig doggo https://url`)
 
 ## Adding a New Translator
 

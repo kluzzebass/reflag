@@ -6,6 +6,14 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/kluzzebass/reflag/preprocessor"
+	_ "github.com/kluzzebass/reflag/preprocessor/dig"         // Register dig preprocessor
+	_ "github.com/kluzzebass/reflag/preprocessor/nslookup"    // Register nslookup preprocessor
+	_ "github.com/kluzzebass/reflag/preprocessor/ping"        // Register ping preprocessor
+	_ "github.com/kluzzebass/reflag/preprocessor/ping6"       // Register ping6 preprocessor
+	_ "github.com/kluzzebass/reflag/preprocessor/traceroute"  // Register traceroute preprocessor
+	_ "github.com/kluzzebass/reflag/preprocessor/traceroute6" // Register traceroute6 preprocessor
+	_ "github.com/kluzzebass/reflag/preprocessor/whois"       // Register whois preprocessor
 	"github.com/kluzzebass/reflag/translator"
 	_ "github.com/kluzzebass/reflag/translator/dig2doggo" // Register dig2doggo translator
 	_ "github.com/kluzzebass/reflag/translator/du2dust"   // Register du2dust translator
@@ -82,14 +90,36 @@ func parseInitArgs(args []string) (shell string, filterNames []string) {
 }
 
 func printInit(shell string, filterNames []string) {
-	var names []string
+	type initItem struct {
+		name       string
+		sourceTool string
+		targetTool string
+		isPreproc  bool
+	}
+
+	var items []initItem
+
 	if len(filterNames) > 0 {
-		// Use specified translators
+		// Use specified translators or preprocessors
 		for _, name := range filterNames {
-			if translator.GetByName(name) != nil {
-				names = append(names, name)
+			if t := translator.GetByName(name); t != nil {
+				// It's a translator (x2y format)
+				items = append(items, initItem{
+					name:       name,
+					sourceTool: t.SourceTool(),
+					targetTool: t.TargetTool(),
+					isPreproc:  false,
+				})
+			} else if p := preprocessor.Get(name); p != nil {
+				// It's a preprocessor (just tool name)
+				items = append(items, initItem{
+					name:       name,
+					sourceTool: p.ToolName(),
+					targetTool: p.ToolName(),
+					isPreproc:  true,
+				})
 			} else {
-				fmt.Fprintf(os.Stderr, "warning: unknown translator %q\n", name)
+				fmt.Fprintf(os.Stderr, "warning: unknown translator or preprocessor %q\n", name)
 			}
 		}
 	} else {
@@ -97,32 +127,39 @@ func printInit(shell string, filterNames []string) {
 		for _, name := range translator.List() {
 			t := translator.GetByName(name)
 			if t != nil && t.IncludeInInit() {
-				names = append(names, name)
+				items = append(items, initItem{
+					name:       name,
+					sourceTool: t.SourceTool(),
+					targetTool: t.TargetTool(),
+					isPreproc:  false,
+				})
 			}
 		}
 	}
-	sort.Strings(names)
+
+	// Sort by source tool name
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].sourceTool < items[j].sourceTool
+	})
 
 	switch shell {
 	case "fish":
 		fmt.Println("# reflag shell init - add to your ~/.config/fish/config.fish")
 		fmt.Println()
-		for _, name := range names {
-			t := translator.GetByName(name)
-			fmt.Printf("functions -e %s 2>/dev/null\n", t.SourceTool())
-			fmt.Printf("function %s\n", t.SourceTool())
-			fmt.Printf("    eval (reflag %s %s $argv)\n", t.SourceTool(), t.TargetTool())
+		for _, item := range items {
+			fmt.Printf("functions -e %s 2>/dev/null\n", item.sourceTool)
+			fmt.Printf("function %s\n", item.sourceTool)
+			fmt.Printf("    eval (reflag %s %s $argv)\n", item.sourceTool, item.targetTool)
 			fmt.Println("end")
 			fmt.Println()
 		}
 	default: // bash, zsh
 		fmt.Println("# reflag shell init - add to your ~/.bashrc or ~/.zshrc")
 		fmt.Println()
-		for _, name := range names {
-			t := translator.GetByName(name)
-			fmt.Printf("unalias %s 2>/dev/null\n", t.SourceTool())
-			fmt.Printf("%s() {\n", t.SourceTool())
-			fmt.Printf("    eval \"$(reflag %s %s \"$@\")\"\n", t.SourceTool(), t.TargetTool())
+		for _, item := range items {
+			fmt.Printf("unalias %s 2>/dev/null\n", item.sourceTool)
+			fmt.Printf("%s() {\n", item.sourceTool)
+			fmt.Printf("    eval \"$(reflag %s %s \"$@\")\"\n", item.sourceTool, item.targetTool)
 			fmt.Println("}")
 			fmt.Println()
 		}
@@ -140,7 +177,7 @@ func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  reflag [--mode=MODE] <source> <target> [flags...]")
 	fmt.Println("  reflag --list")
-	fmt.Println("  reflag --init [bash|zsh|fish] [translator...]")
+	fmt.Println("  reflag --init [bash|zsh|fish] [translator...] |preprocessor...]")
 	fmt.Println("  reflag --version")
 	fmt.Println("  reflag --license")
 	fmt.Println()
@@ -150,6 +187,9 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("Available translators:")
 	translator.PrintTable(os.Stdout)
+	fmt.Println()
+	fmt.Println("Available preprocessors:")
+	preprocessor.PrintTable(os.Stdout)
 }
 
 func runTranslator(t translator.Translator, args []string, mode string) {
@@ -161,7 +201,13 @@ func runTranslator(t translator.Translator, args []string, mode string) {
 		}
 	}
 
-	translatedArgs := t.Translate(args, mode)
+	// Apply preprocessing if available for the source tool
+	preprocessedArgs := args
+	if p := preprocessor.Get(t.SourceTool()); p != nil {
+		preprocessedArgs = p.Preprocess(args)
+	}
+
+	translatedArgs := t.Translate(preprocessedArgs, mode)
 
 	// Build and print the command
 	parts := make([]string, len(translatedArgs)+1)
@@ -189,7 +235,11 @@ func main() {
 		printLicense()
 		return
 	case "--list", "-l":
+		fmt.Println("Translators:")
 		translator.PrintTable(os.Stdout)
+		fmt.Println()
+		fmt.Println("Preprocessors:")
+		preprocessor.PrintTable(os.Stdout)
 		return
 	case "--help", "-h":
 		printUsage()
@@ -220,6 +270,21 @@ func main() {
 	source, target := args[0], args[1]
 	t := translator.Get(source, target)
 	if t == nil {
+		// Check if there's a preprocessor for the source tool (standalone preprocessing)
+		if p := preprocessor.Get(source); p != nil {
+			preprocessedArgs := p.Preprocess(args[2:])
+			// Build and print the command with target tool
+			// Use 'command' prefix to bypass shell function/alias lookup
+			parts := make([]string, len(preprocessedArgs)+2)
+			parts[0] = "command"
+			parts[1] = target
+			for i, arg := range preprocessedArgs {
+				parts[i+2] = shellQuote(arg)
+			}
+			fmt.Println(strings.Join(parts, " "))
+			return
+		}
+
 		fmt.Fprintf(os.Stderr, "error: no translator registered for %s to %s\n", source, target)
 		fmt.Fprintln(os.Stderr, "use 'reflag --list' to see available translators")
 		os.Exit(1)

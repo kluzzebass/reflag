@@ -17,6 +17,33 @@ You can't teach an old dog new tricks. After decades of muscle memory, your fing
 
 reflag bridges this gap. Instead of retraining years of muscle memory or giving up on better tools, you can keep typing the commands you know while getting the output you want. It's not about refusing to learn; it's about acknowledging that some habits are so deeply ingrained they're practically reflexes.
 
+## Features
+
+### Flag Translation
+
+Automatically translates flags between different CLI tools, so you can use familiar commands with modern replacements.
+
+### URL Preprocessing
+
+reflag includes preprocessors that extract hostnames from URLs for network diagnostic tools. This means you can paste full URLs directly:
+
+```bash
+# Instead of manually extracting the hostname
+ping https://vg.no/index.html
+# reflag extracts: ping vg.no
+
+# Works with any network tool
+dig https://example.com/page MX
+traceroute https://google.com/search?q=test
+```
+
+**Supported preprocessors:**
+- `ping` / `ping6` - Extract hostnames from URLs
+- `dig` - Extract hostnames from URLs  
+- `nslookup` - Extract hostnames from URLs
+- `traceroute` / `traceroute6` - Extract hostnames from URLs
+- `whois` - Extract domains from URLs
+
 ## Quick Start
 
 ### 1. Install reflag

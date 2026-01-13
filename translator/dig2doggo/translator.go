@@ -3,6 +3,8 @@ package dig2doggo
 import (
 	"strings"
 
+	"github.com/kluzzebass/reflag/preprocessor"
+	_ "github.com/kluzzebass/reflag/preprocessor/dig" // Register dig preprocessor
 	"github.com/kluzzebass/reflag/translator"
 )
 
@@ -18,7 +20,12 @@ func (t *Translator) TargetTool() string  { return "doggo" }
 func (t *Translator) IncludeInInit() bool { return false }
 
 func (t *Translator) Translate(args []string, mode string) []string {
-	return translateFlags(args)
+	// Apply preprocessing if available
+	preprocessedArgs := args
+	if p := preprocessor.Get("dig"); p != nil {
+		preprocessedArgs = p.Preprocess(args)
+	}
+	return translateFlags(preprocessedArgs)
 }
 
 func translateFlags(args []string) []string {
