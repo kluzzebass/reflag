@@ -1,8 +1,9 @@
 name: Update Homebrew Formula
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -24,6 +25,24 @@ jobs:
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Wait for release to be created
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Waiting for release $VERSION to be published..."
+          for i in {1..30}; do
+            if gh release view "$VERSION" --repo kluzzebass/reflag > /dev/null 2>&1; then
+              echo "Release found!"
+              exit 0
+            fi
+            echo "Attempt $i: Release not found yet, waiting 10 seconds..."
+            sleep 10
+          done
+          echo "Timeout waiting for release"
+          exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Download checksums and extract SHA256 hashes
         id: sha
