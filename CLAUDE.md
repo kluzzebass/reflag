@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-reflag is a Go CLI tool that translates command-line flags between traditional UNIX tools and their modern replacements. It supports 7 translators covering common tools like ls, find, grep, du, ps, dig, and less.
+reflag is a Go CLI tool that translates command-line flags between traditional UNIX tools and their modern replacements. It supports 8 translators covering common tools like ls, find, grep, du, ps, dig, less, and more.
 
 ## Build and Test Commands
 
@@ -44,7 +44,8 @@ reflag/
 │   ├── du2dust/                  # du → dust
 │   ├── ps2procs/                 # ps → procs
 │   ├── dig2doggo/                # dig → doggo (optional)
-│   └── less2moor/                # less → moor (optional)
+│   ├── less2moor/                # less → moor (optional)
+│   └── more2moor/                # more → moor (optional)
 ```
 
 ### Core Components
@@ -80,6 +81,7 @@ reflag/
 | ps2procs | ps | procs | true | BSD/GNU styles |
 | dig2doggo | dig | doggo | false | DNS query translation |
 | less2moor | less | moor | false | Pager flags |
+| more2moor | more | moor | false | Simple pager flags |
 
 ### ls2eza Translator
 
@@ -116,7 +118,8 @@ These flags have different meanings between BSD and GNU ls:
 - **du2dust**: Converts du flags including unit/block size mappings
 - **ps2procs**: Handles both BSD-style (`ps aux`) and GNU-style (`ps -ef`) syntax
 - **dig2doggo**: Translates DNS query flags including +options syntax
-- **less2moor**: Converts pager flags for the moor Rust-based pager
+- **less2moor**: Converts less pager flags for the moor Rust-based pager
+- **more2moor**: Converts more pager flags (simpler than less) for moor
 
 ## Adding a New Translator
 
