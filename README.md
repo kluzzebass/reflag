@@ -10,6 +10,7 @@ A tool that translates command-line flags between different CLI tools. Currently
 - `du` → [dust](https://github.com/bootandy/dust)
 - `ps` → [procs](https://github.com/dalance/procs)
 - `dig` → [doggo](https://github.com/mr-karan/doggo)
+- `less` → [moor](https://github.com/walles/moor)
 
 ## Why?
 
@@ -56,10 +57,10 @@ Install the tools you want to use. For example:
 
 ```bash
 # macOS
-brew install eza fd ripgrep dust procs doggo
+brew install eza fd ripgrep dust procs doggo moor
 
 # Linux (Ubuntu/Debian)
-sudo apt install eza fd-find ripgrep dust procs 
+sudo apt install eza fd-find ripgrep dust procs
 
 # Linux (Fedora)
 sudo dnf install eza fd-find ripgrep dust procs
@@ -67,6 +68,8 @@ sudo dnf install eza fd-find ripgrep dust procs
 # Arch Linux
 sudo pacman -S eza fd ripgrep dust procs
 ```
+
+**Note:** `moor` may need to be installed separately on some platforms. See the [moor installation guide](https://github.com/walles/moor#installing).
 
 ### 3. Set up shell integration
 
@@ -96,6 +99,7 @@ find . -name '*.go'  # Uses fd
 du -h            # Uses dust
 ps aux           # Uses procs
 dig example.com MX  # Uses doggo
+less -S file.txt # Uses moor
 ```
 
 That's it! Your muscle memory still works, but you get modern tool output.
