@@ -4,6 +4,7 @@
 
 A tool that translates command-line flags between different CLI tools. Currently supports:
 
+- `cat` → [bat](https://github.com/sharkdp/bat)
 - `ls` → [eza](https://github.com/eza-community/eza)
 - `grep` → [ripgrep](https://github.com/BurntSushi/ripgrep)
 - `find` → [fd](https://github.com/sharkdp/fd)
@@ -58,16 +59,16 @@ Install the tools you want to use. For example:
 
 ```bash
 # macOS
-brew install eza fd ripgrep dust procs doggo moor duf
+brew install bat eza fd ripgrep dust procs doggo moor duf
 
 # Linux (Ubuntu/Debian)
-sudo apt install eza fd-find ripgrep dust procs
+sudo apt install bat eza fd-find ripgrep dust procs
 
 # Linux (Fedora)
-sudo dnf install eza fd-find ripgrep dust procs
+sudo dnf install bat eza fd-find ripgrep dust procs
 
 # Arch Linux
-sudo pacman -S eza fd ripgrep dust procs
+sudo pacman -S bat eza fd ripgrep dust procs
 ```
 
 **Note:** `moor` may need to be installed separately on some platforms. See the [moor installation guide](https://github.com/walles/moor#installing).
@@ -94,14 +95,14 @@ echo 'reflag --init fish | source' >> ~/.config/fish/config.fish && source ~/.co
 ### 4. Start using your familiar commands
 
 ```bash
-ls -ltr          # Uses eza under the hood
-grep -rni TODO   # Uses ripgrep
-find . -name '*.go'  # Uses fd
-df -h            # Uses duf
-du -h            # Uses dust
-ps aux           # Uses procs
+ls -ltr             # Uses eza under the hood
+grep -rni TODO      # Uses ripgrep
+find . -name '*.go' # Uses fd
+df -h               # Uses duf
+du -h               # Uses dust
+ps aux              # Uses procs
 dig example.com MX  # Uses doggo
-less -S file.txt # Uses moor
+less -S file.txt    # Uses moor
 ```
 
 That's it! Your muscle memory still works, but you get modern tool output.
@@ -314,6 +315,68 @@ ls and eza have opposite default sort orders for time and size sorting. reflag a
 | `-I` | Prevent auto -A (ignored) | Ignore pattern (`-I PATTERN`) |
 | `-w` | Raw non-printable chars (ignored) | Output width (`-w COLS`) |
 | `-D` | Date format (`-D FORMAT`) | Dired mode (ignored) |
+
+## cat2bat Translator
+
+The cat2bat translator converts `cat` commands to `bat` with flags that make bat behave like cat.
+
+### Key Features
+
+- **Plain output**: Always adds `-p` (plain style) to disable bat's decorations like line numbers, grid borders, and file headers
+- **No paging**: Adds `--paging=never` to disable bat's automatic paging behavior
+- **Smart colorization**: Uses `--color=auto` to enable syntax highlighting when output goes to a terminal, but disables it when piped or redirected
+
+### Supported Flags
+
+| cat flag | bat equivalent | Description |
+|----------|----------------|-------------|
+| `-n` | `-n` | Number all output lines |
+| `--number` | `-n` | Number all output lines |
+| `-s` | `-s` | Squeeze multiple blank lines into one |
+| `--squeeze-blank` | `-s` | Squeeze multiple blank lines |
+| `-A` | `-A` | Show non-printable characters |
+| `--show-all` | `-A` | Show non-printable characters |
+| `-u` | `-u` | Unbuffered output |
+| `--unbuffered` | `-u` | Unbuffered output |
+
+### Ignored Flags
+
+All bat-specific flags are ignored since the goal is cat-like behavior:
+- Syntax highlighting options (`-l`, `--language`, `--theme`)
+- Line highlighting (`-H`, `--highlight-line`)
+- Decorations (`--style`, `--decorations`)
+- Git integration (`-d`, `--diff`)
+- File metadata (`--file-name`)
+- And other bat-specific features
+
+### Examples
+
+```bash
+$ reflag cat bat README.md
+bat -p --paging=never --color=auto README.md
+
+$ reflag cat bat -n file.txt
+bat -p --paging=never --color=auto -n file.txt
+
+$ reflag cat bat -ns file1.txt file2.txt
+bat -p --paging=never --color=auto -n -s file1.txt file2.txt
+
+# Color output when viewing in terminal
+$ reflag cat bat file.rs
+# Shows syntax-highlighted Rust code
+
+# No color when piping to other commands
+$ reflag cat bat file.rs | grep "fn"
+# Plain output suitable for grep
+```
+
+### Why Use This?
+
+While bat is designed to be a cat replacement with syntax highlighting, sometimes you want:
+- The simplicity of cat's output
+- Syntax highlighting only when appropriate (terminal vs pipe)
+- To maintain muscle memory for cat flags
+- A gradual transition from cat to bat
 
 ## grep2rg Translator
 

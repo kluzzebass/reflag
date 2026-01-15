@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-reflag is a Go CLI tool that translates command-line flags between traditional UNIX tools and their modern replacements. It supports 8 translators covering common tools like ls, find, grep, du, ps, dig, less, and more.
+reflag is a Go CLI tool that translates command-line flags between traditional UNIX tools and their modern replacements. It supports 9 translators covering common tools like cat, ls, find, grep, du, ps, dig, less, and more.
 
 ## Build and Test Commands
 
@@ -38,6 +38,7 @@ reflag/
 │   ├── translator.go             # Translator interface
 │   ├── registry.go               # Global translator registry
 │   ├── translator_test.go        # Registry tests
+│   ├── cat2bat/                  # cat → bat (plain mode)
 │   ├── ls2eza/                   # ls → eza (BSD/GNU modes)
 │   ├── find2fd/                  # find → fd (glob→regex conversion)
 │   ├── grep2rg/                  # grep → ripgrep
@@ -74,6 +75,7 @@ reflag/
 
 | Translator | Source | Target | IncludeInInit | Notes |
 |------------|--------|--------|---------------|-------|
+| cat2bat | cat | bat | true | Plain mode with auto colorization |
 | ls2eza | ls | eza | true | BSD/GNU mode detection |
 | find2fd | find | fd | true | Glob-to-regex conversion |
 | grep2rg | grep | ripgrep | true | Pattern handling |
@@ -113,6 +115,7 @@ These flags have different meanings between BSD and GNU ls:
 
 ### Other Translators
 
+- **cat2bat**: Converts cat commands to bat with plain mode flags (-p, --paging=never, --color=auto) to make bat behave like cat while preserving auto colorization
 - **find2fd**: Converts find expressions to fd syntax, including glob-to-regex pattern conversion
 - **grep2rg**: Translates grep flags to ripgrep, handles include/exclude patterns
 - **du2dust**: Converts du flags including unit/block size mappings
