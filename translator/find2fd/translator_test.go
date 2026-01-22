@@ -20,12 +20,12 @@ func TestTranslateFlags(t *testing.T) {
 		{
 			name:     "find specific dir",
 			input:    []string{"/tmp"},
-			expected: []string{"/tmp"},
+			expected: []string{".", "/tmp"},
 		},
 		{
 			name:     "find multiple dirs",
 			input:    []string{"src", "lib"},
-			expected: []string{"src", "lib"},
+			expected: []string{".", "src", "lib"},
 		},
 
 		// -name patterns
@@ -105,7 +105,7 @@ func TestTranslateFlags(t *testing.T) {
 		{
 			name:     "src dir with type",
 			input:    []string{"src", "-type", "f"},
-			expected: []string{"-t", "f", "src"},
+			expected: []string{"-t", "f", ".", "src"},
 		},
 
 		// -print0

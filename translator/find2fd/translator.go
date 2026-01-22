@@ -209,9 +209,13 @@ func translateFlags(args []string) []string {
 
 	result = append(result, fdArgs...)
 
-	// Add pattern if we have one
+	// Add pattern if we have one, otherwise add match-all pattern if we have paths
+	// fd syntax is: fd [PATTERN] [PATH]... - pattern must come before paths
 	if pattern != "" {
 		result = append(result, pattern)
+	} else if len(paths) > 0 {
+		// When searching a directory without a pattern, fd needs a match-all pattern
+		result = append(result, ".")
 	}
 
 	// Add paths
