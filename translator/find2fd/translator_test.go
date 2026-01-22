@@ -240,6 +240,164 @@ func TestTranslateFlags(t *testing.T) {
 			input:    []string{".", "-name", "*.go", "-quit"},
 			expected: []string{"-1", "\\.go$"},
 		},
+
+		// Real-world find usage patterns
+		// find ~/.local (list all files in directory)
+		{
+			name:     "find home subdirectory",
+			input:    []string{"/Users/ove/.local"},
+			expected: []string{".", "/Users/ove/.local"},
+		},
+		// find /var/log -name "*.log" -mtime -1 (recent logs)
+		{
+			name:     "find recent logs",
+			input:    []string{"/var/log", "-name", "*.log", "-mtime", "-1"},
+			expected: []string{"--changed-within", "1d", "\\.log$", "/var/log"},
+		},
+		// find . -type f -size +100M (large files)
+		{
+			name:     "find large files",
+			input:    []string{".", "-type", "f", "-size", "+100M"},
+			expected: []string{"-t", "f", "-S", "+100M"},
+		},
+		// find . -type f -name "*.log" -mtime +7 (old log files)
+		{
+			name:     "find old log files",
+			input:    []string{".", "-type", "f", "-name", "*.log", "-mtime", "+7"},
+			expected: []string{"-t", "f", "--changed-before", "7d", "\\.log$"},
+		},
+		// find /tmp /var/tmp -type f (multiple directories)
+		{
+			name:     "find in multiple directories",
+			input:    []string{"/tmp", "/var/tmp", "-type", "f"},
+			expected: []string{"-t", "f", ".", "/tmp", "/var/tmp"},
+		},
+		// find . -maxdepth 1 -type f (only current directory)
+		{
+			name:     "find files in current dir only",
+			input:    []string{".", "-maxdepth", "1", "-type", "f"},
+			expected: []string{"-d", "1", "-t", "f"},
+		},
+		// find ~ -name ".bashrc" (find dotfiles)
+		{
+			name:     "find dotfile in home",
+			input:    []string{"/Users/ove", "-name", ".bashrc"},
+			expected: []string{"\\.bashrc", "/Users/ove"},
+		},
+		// find . -type d -name "node_modules" (find directories by name)
+		{
+			name:     "find node_modules directories",
+			input:    []string{".", "-type", "d", "-name", "node_modules"},
+			expected: []string{"-t", "d", "node_modules"},
+		},
+		// find . -empty -type f (empty files)
+		{
+			name:     "find empty files",
+			input:    []string{".", "-empty", "-type", "f"},
+			expected: []string{"-t", "e", "-t", "f"},
+		},
+		// find . -amin -30 (accessed in last 30 minutes)
+		{
+			name:     "find recently accessed",
+			input:    []string{".", "-amin", "-30"},
+			expected: []string{"--changed-within", "30min"},
+		},
+		// find . -ctime -1 (changed in last day)
+		{
+			name:     "find recently changed ctime",
+			input:    []string{".", "-ctime", "-1"},
+			expected: []string{"--changed-within", "1d"},
+		},
+		// find . -type f -name "*.txt" -print0 | xargs -0 ... (null-separated)
+		{
+			name:     "find for xargs with null separator",
+			input:    []string{".", "-type", "f", "-name", "*.txt", "-print0"},
+			expected: []string{"-t", "f", "-0", "\\.txt$"},
+		},
+		// find /home -user root -type f (files owned by root)
+		{
+			name:     "find files owned by root",
+			input:    []string{"/home", "-user", "root", "-type", "f"},
+			expected: []string{"--owner", "root", "-t", "f", ".", "/home"},
+		},
+		// find . -L -type l (follow symlinks, find broken links)
+		{
+			name:     "find with follow symlinks",
+			input:    []string{"-L", ".", "-type", "l"},
+			expected: []string{"-L", "-t", "l"},
+		},
+		// find . -mindepth 2 -maxdepth 4 -type f (depth range)
+		{
+			name:     "find with depth range",
+			input:    []string{".", "-mindepth", "2", "-maxdepth", "4", "-type", "f"},
+			expected: []string{"--min-depth", "2", "-d", "4", "-t", "f"},
+		},
+		// find project/ -name "*.js" -type f (search in subdirectory)
+		{
+			name:     "find js files in project",
+			input:    []string{"project/", "-name", "*.js", "-type", "f"},
+			expected: []string{"-t", "f", "\\.js$", "project/"},
+		},
+		// find . -iname "readme*" (case insensitive glob)
+		{
+			name:     "find readme case insensitive",
+			input:    []string{".", "-iname", "readme*"},
+			expected: []string{"-i", "readme[^/]*"},
+		},
+		// find . -name "*.go" -newer go.mod (newer than reference)
+		{
+			name:     "find go files newer than go.mod",
+			input:    []string{".", "-name", "*.go", "-newer", "go.mod"},
+			expected: []string{"--newer", "go.mod", "\\.go$"},
+		},
+		// find /etc -type f -size +1k -size -100k (size range - partial support)
+		{
+			name:     "find config files by size",
+			input:    []string{"/etc", "-type", "f", "-size", "+1k"},
+			expected: []string{"-t", "f", "-S", "+1k", ".", "/etc"},
+		},
+		// find . -xdev -type f (single filesystem)
+		{
+			name:     "find on single filesystem",
+			input:    []string{".", "-xdev", "-type", "f"},
+			expected: []string{"--one-file-system", "-t", "f"},
+		},
+		// find . -mount -name "*.bak" (mount is alias for xdev)
+		{
+			name:     "find with mount option",
+			input:    []string{".", "-mount", "-name", "*.bak"},
+			expected: []string{"--one-file-system", "\\.bak$"},
+		},
+		// find . -path "*/test/*" -name "*.go" (path and name combined)
+		{
+			name:     "find test go files by path",
+			input:    []string{".", "-path", "*/test/*", "-name", "*.go"},
+			expected: []string{"-p", "*/test/*", "\\.go$"},
+		},
+		// find . -not -name "*.txt" (negation - limited support)
+		{
+			name:     "find with negation ignored",
+			input:    []string{".", "-not", "-name", "*.txt"},
+			expected: []string{"\\.txt$"},
+		},
+		// find . -name "*.tar.gz" (compound extension)
+		{
+			name:     "find tar.gz files",
+			input:    []string{".", "-name", "*.tar.gz"},
+			expected: []string{"\\.tar\\.gz$"},
+		},
+		// find . -H -name "*.sh" (H option)
+		{
+			name:     "find with H option",
+			input:    []string{"-H", ".", "-name", "*.sh"},
+			expected: []string{"-H", "\\.sh$"},
+		},
+		// find . -group staff -type f
+		{
+			name:     "find files by group",
+			input:    []string{".", "-group", "staff", "-type", "f"},
+			expected: []string{"--owner", ":staff", "-t", "f"},
+		},
 	}
 
 	for _, tt := range tests {
