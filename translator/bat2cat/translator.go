@@ -150,6 +150,11 @@ func handleShortFlags(arg string, args []string, i int, result *[]string, skipNe
 		} else {
 			// Flags without direct mapping or bat-specific flags
 			switch flag {
+			case 'v':
+				// -v (display non-printing as ^X / M-x) — approximated with --show-all
+				// and caret notation. Note: bat also visualizes spaces/newlines which
+				// cat -v does not, but this is the closest available approximation.
+				*result = append(*result, "--show-all", "--nonprintable-notation=caret")
 			case 'p':
 				// -p (plain) is already added by default, ignore
 			case 'l', 'H', 'm':

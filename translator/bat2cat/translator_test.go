@@ -70,6 +70,13 @@ func TestTranslateFlags(t *testing.T) {
 			expected: []string{"-p", "--paging=never", "--color=auto", "-u", "file.txt"},
 		},
 
+		// Show non-printing (approximate: also shows spaces/newlines)
+		{
+			name:     "show non-printing",
+			input:    []string{"-v", "file.txt"},
+			expected: []string{"-p", "--paging=never", "--color=auto", "--show-all", "--nonprintable-notation=caret", "file.txt"},
+		},
+
 		// Combined flags
 		{
 			name:     "combined flags",
@@ -80,6 +87,21 @@ func TestTranslateFlags(t *testing.T) {
 			name:     "combined with number and squeeze",
 			input:    []string{"-nsu", "file.txt"},
 			expected: []string{"-p", "--paging=never", "--color=auto", "-n", "-s", "-u", "file.txt"},
+		},
+		{
+			name:     "non-printing with line numbers",
+			input:    []string{"-vn", "file.txt"},
+			expected: []string{"-p", "--paging=never", "--color=auto", "--show-all", "--nonprintable-notation=caret", "-n", "file.txt"},
+		},
+		{
+			name:     "non-printing with squeeze and unbuffered",
+			input:    []string{"-vsu", "file.txt"},
+			expected: []string{"-p", "--paging=never", "--color=auto", "--show-all", "--nonprintable-notation=caret", "-s", "-u", "file.txt"},
+		},
+		{
+			name:     "non-printing as separate flag with others",
+			input:    []string{"-n", "-v", "-s", "file.txt"},
+			expected: []string{"-p", "--paging=never", "--color=auto", "-n", "--show-all", "--nonprintable-notation=caret", "-s", "file.txt"},
 		},
 
 		// bat-specific flags that are ignored or overridden
